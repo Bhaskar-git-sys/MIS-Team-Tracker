@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#17191c"/>
+      <stop offset="0.5" stop-color="#55585c"/>
+      <stop offset="1" stop-color="#151719"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#f5f5f7"/>
+      <stop offset="0.22" stop-color="#929499"/>
+      <stop offset="0.52" stop-color="#d6d7da"/>
+      <stop offset="0.8" stop-color="#727478"/>
+      <stop offset="1" stop-color="#f4f4f5"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ff5b53"/>
+      <stop offset="1" stop-color="#e21f25"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0.8" y2="1">
+      <stop stop-color="#3158d2"/>
+      <stop offset="1" stop-color="#101c7c"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0.8" y2="1">
+      <stop stop-color="#ffe2a3"/>
+      <stop offset="0.55" stop-color="#ffb719"/>
+      <stop offset="1" stop-color="#ed9210"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <path d="M0 90h1200M0 110h1200M0 130h1200M0 150h1200M0 170h1200" stroke="#fff" stroke-opacity="0.035" stroke-width="3"/>
+
+  <g transform="translate(260 72)" filter="url(#shadow)">
+    <rect width="486" height="486" rx="82" fill="url(#metal)"/>
+    <rect x="19" y="19" width="448" height="448" rx="68" fill="#35373a" stroke="#bfc0c4" stroke-width="6"/>
+    <path d="M103 82h143L167 226l126 180H164l-61-83z" fill="url(#red)"/>
+    <path d="M225 82h73l-82 146 135 178h-73L163 236z" fill="url(#blue)" stroke="#252a35" stroke-width="6"/>
+    <path d="M288 82h121L293 226l135 180H355L229 236z" fill="url(#gold)" stroke="#e0e0de" stroke-width="6"/>
+  </g>
+
+  <text x="870" y="220" text-anchor="middle" fill="#f8fafc" font-family="Arial, sans-serif" font-size="92" font-weight="800" letter-spacing="8">KM</text>
+  <text x="870" y="292" text-anchor="middle" fill="#fbbf24" font-family="Arial, sans-serif" font-size="32" font-weight="700" letter-spacing="3">KALYANI MOTORS</text>
+  <text x="870" y="340" text-anchor="middle" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="24" font-weight="600" letter-spacing="4">PVT LTD</text>
+  <line x1="760" y1="378" x2="980" y2="378" stroke="#fbbf24" stroke-width="3"/>
+  <text x="870" y="430" text-anchor="middle" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="22" letter-spacing="3">MIS TEAM TRACKER</text>
+  <text x="870" y="474" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="18" letter-spacing="1">Management Information System</text>
+</svg>

@@ -1,0 +1,16 @@
+{
+  "name": "Kalyani Motors MIS Team Tracker",
+  "short_name": "Kalyani Motors MIS",
+  "description": "Internal MIS portal and dashboard for the Kalyani Motors MIS team.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
