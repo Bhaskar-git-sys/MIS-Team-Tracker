@@ -92,16 +92,29 @@ export async function getAllDailyFixedTasks(date?: string): Promise<DailyFixedTa
   return (data ?? []) as DailyFixedTask[];
 }
 
+/**
+ * Start a fixed task using secure RPC function
+ * This records start_time and sets status to 'wip'
+ * The start_time is persisted immediately in the database
+ */
 export async function startTask(id: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc("start_fixed_task", { p_task_id: id });
   return { error: error?.message ?? null };
 }
 
+/**
+ * Complete a fixed task using secure RPC function
+ * This records completed_time, calculates duration, and sets status to 'completed'
+ */
 export async function completeTask(id: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc("complete_fixed_task", { p_task_id: id });
   return { error: error?.message ?? null };
 }
 
+/**
+ * Hold a fixed task using secure RPC function
+ * This records hold_time, calculates duration, and sets status to 'hold'
+ */
 export async function holdTask(id: string, remarks: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc("hold_fixed_task", {
     p_task_id: id,
@@ -110,17 +123,57 @@ export async function holdTask(id: string, remarks: string): Promise<{ error: st
   return { error: error?.message ?? null };
 }
 
+/**
+ * Resume a held fixed task using secure RPC function
+ * This records resume_time and sets status back to 'wip'
+ */
 export async function phaseTask(id: string): Promise<{ error: string | null }> {
   const { error } = await supabase.rpc("phase_fixed_task", { p_task_id: id });
   return { error: error?.message ?? null };
 }
 
+/**
+ * Compute the live working duration for a task that is currently active
+ * Adds accumulated duration_seconds to time elapsed since active_started_at
+ * NOTE: This is calculated locally for UI display; actual duration is persisted in DB on task completion
+ */
 export function computeTaskDurationSeconds(task: DailyFixedTask): number {
   const accumulated = task.duration_seconds || 0;
   if (task.status === "wip" && task.active_started_at) {
     return accumulated + Math.max(0, Math.floor((Date.now() - new Date(task.active_started_at).getTime()) / 1000));
   }
   return accumulated;
+}
+
+/**
+ * Retrieve the employee's actual task start time for a given date
+ * Used for automatic reporting time population (Excel upload)
+ * Returns the timestamp when the employee first clicked Start Task
+ * Timezone-aware: uses database function that returns timestamptz
+ */
+export async function getEmployeeTaskStartTimeForReporting(
+  employeeId: string,
+  taskDate: string
+): Promise<{ startTime: string | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase.rpc("get_employee_task_start_time", {
+      p_employee_id: employeeId,
+      p_task_date: taskDate,
+    });
+
+    if (error) {
+      console.error("Error fetching employee task start time:", error);
+      return { startTime: null, error: error.message };
+    }
+
+    return { startTime: data as string | null, error: null };
+  } catch (err) {
+    console.error("Exception fetching employee task start time:", err);
+    return {
+      startTime: null,
+      error: err instanceof Error ? err.message : "Failed to fetch start time",
+    };
+  }
 }
 
 export type { FixedTaskStatus, FixedTaskPriority };
