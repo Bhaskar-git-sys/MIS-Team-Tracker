@@ -20,6 +20,7 @@ import {
   AlertCircle,
   FileSpreadsheet,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -507,6 +508,32 @@ const makeDateTime = (
   return `${safeDate}T${safeTime}:00`;
 };
 
+const toTimeInputValue = (
+  value: string | null
+): string => {
+  if (!value) {
+    return "";
+  }
+
+  const text = clean(value);
+
+  // Plain SQL time values, including HH:mm:ss.
+  const plainTime = text.match(/^(\\d{1,2}:\\d{2})/);
+  if (plainTime) {
+    return excelTimeToString(plainTime[1]);
+  }
+
+  // Timestamp values returned by Supabase need local HH:mm for <input type="time">.
+  const date = new Date(text);
+  if (!Number.isNaN(date.getTime())) {
+    return `${String(date.getHours()).padStart(2, "0")}:${String(
+      date.getMinutes()
+    ).padStart(2, "0")}`;
+  }
+
+  return excelTimeToString(text);
+};
+
 const formatTime = (
   value: string | null
 ): string => {
@@ -620,6 +647,9 @@ export default function FixedDailyTasks() {
 
   const [showAddModal, setShowAddModal] =
     useState(false);
+
+  // When set, the shared task form edits an existing task instead of inserting one.
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const [adding, setAdding] =
     useState(false);
@@ -1017,6 +1047,7 @@ export default function FixedDailyTasks() {
       }
 
       setShowAddModal(false);
+      setEditingTaskId(null);
 
       setForm({
         ...EMPTY_FORM,
@@ -1088,28 +1119,22 @@ export default function FixedDailyTasks() {
         /*
          * Duplicate check
          */
+        let duplicateQuery = supabase
+          .from("daily_fixed_tasks")
+          .select("id")
+          .eq("task_date", safeDate)
+          .eq("assigned_to", form.employee_id)
+          .eq("report_name", form.report_name.trim());
+
+        // Do not treat the record being edited as a duplicate of itself.
+        if (editingTaskId) {
+          duplicateQuery = duplicateQuery.neq("id", editingTaskId);
+        }
+
         const {
           data: existing,
-          error:
-          duplicateError,
-        } = await supabase
-          .from(
-            "daily_fixed_tasks"
-          )
-          .select("id")
-          .eq(
-            "task_date",
-            safeDate
-          )
-          .eq(
-            "assigned_to",
-            form.employee_id
-          )
-          .eq(
-            "report_name",
-            form.report_name.trim()
-          )
-          .limit(1);
+          error: duplicateError,
+        } = await duplicateQuery.limit(1);
 
         if (duplicateError) {
           showToast(
@@ -1185,33 +1210,34 @@ export default function FixedDailyTasks() {
           remarks:
             form.remarks.trim() ||
             null,
-
-          status: "open",
         };
 
         console.log(
-          "Adding fixed task:",
-          payload
+          editingTaskId ? "Updating fixed task:" : "Adding fixed task:",
+          { ...payload, id: editingTaskId }
         );
 
-        const {
-          error,
-        } = await supabase
-          .from(
-            "daily_fixed_tasks"
-          )
-          .insert(payload);
+        const { error } = editingTaskId
+          ? await supabase
+              .from("daily_fixed_tasks")
+              .update(payload)
+              .eq("id", editingTaskId)
+          : await supabase
+              .from("daily_fixed_tasks")
+              .insert({ ...payload, status: "open" });
 
         if (error) {
           console.error(
-            "Manager add task error:",
+            editingTaskId ? "Manager update task error:" : "Manager add task error:",
             error
           );
 
           showToast(
             "error",
             error.message ||
-            "Failed to create fixed task."
+              (editingTaskId
+                ? "Failed to update fixed task."
+                : "Failed to create fixed task.")
           );
 
           return;
@@ -1224,9 +1250,9 @@ export default function FixedDailyTasks() {
 
         showToast(
           "success",
-          `Task assigned to ${employee?.full_name ||
-          "employee"
-          } successfully.`
+          editingTaskId
+            ? `Task updated successfully for ${employee?.full_name || "employee"}.`
+            : `Task assigned to ${employee?.full_name || "employee"} successfully.`
         );
 
         closeAddModal();
@@ -1248,6 +1274,28 @@ export default function FixedDailyTasks() {
         setAdding(false);
       }
     };
+
+  /* =========================================================
+     EDIT FIXED TASK
+  ========================================================= */
+
+  const editTask = (task: FixedTask) => {
+    setEditingTaskId(task.id);
+    setForm({
+      employee_id: task.assigned_to,
+      report_name: task.report_name ?? "",
+      type: task.type ?? "",
+      working_type: task.working_type ?? "",
+      estimation_duration: task.estimation_duration ?? "",
+      start_the_report: toTimeInputValue(task.start_report_time),
+      shift: task.shift ?? "",
+      start_time: toTimeInputValue(task.start_time),
+      end_time: toTimeInputValue(task.end_time),
+      priority: task.priority ?? "medium",
+      remarks: task.remarks ?? "",
+    });
+    setShowAddModal(true);
+  };
 
   /* =========================================================
      DOWNLOAD TEMPLATE
@@ -2785,7 +2833,16 @@ export default function FixedDailyTasks() {
                     )}
                   </div>
 
-                  <div className="border-t border-slate-100 dark:border-slate-700 mt-4 pt-3 flex justify-end">
+                  <div className="border-t border-slate-100 dark:border-slate-700 mt-4 pt-3 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editTask(task)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-1.5"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+
                     <button
                       type="button"
                       onClick={() =>
@@ -2817,7 +2874,7 @@ export default function FixedDailyTasks() {
         onClose={
           closeAddModal
         }
-        title="Add Fixed Task"
+        title={editingTaskId ? "Edit Fixed Task" : "Add Fixed Task"}
         size="lg"
       >
         <div className="space-y-5">
@@ -3242,11 +3299,13 @@ export default function FixedDailyTasks() {
               }
               className="btn-primary flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
+              {editingTaskId
+                ? <Pencil className="w-4 h-4" />
+                : <Plus className="w-4 h-4" />}
 
               {adding
-                ? "Adding..."
-                : "Assign Fixed Task"}
+                ? (editingTaskId ? "Saving..." : "Adding...")
+                : (editingTaskId ? "Save Changes" : "Assign Fixed Task")}
             </button>
           </div>
         </div>
